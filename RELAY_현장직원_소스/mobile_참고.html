@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>RELAY Field</title>
+<style>
+:root{
+  --bg:#F3F5F8; --card:#fff; --ink:#1F2A37; --muted:#6B7685; --line:#E2E7EE;
+  --accent:#2F5D8A; --accent-soft:#E8EFF7; --chip:#EEF2F6;
+  --ok:#2E9E6A; --warn:#E59A0B; --bad:#D93F3F; --standby:#6B7685;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+  font-family:'Pretendard','Malgun Gothic',sans-serif;-webkit-tap-highlight-color:transparent}
+#app{display:flex;flex-direction:column;height:100vh;max-width:720px;margin:0 auto;background:var(--bg)}
+
+header{flex:none;display:flex;align-items:center;gap:12px;padding:16px 18px;background:#fff;
+  border-bottom:1px solid var(--line)}
+header .lg{width:38px;height:38px;border-radius:10px;background:var(--accent);color:#fff;
+  display:grid;place-items:center;font-weight:900;font-size:18px;flex:none}
+header b{font-size:19px;font-weight:900;letter-spacing:1px}
+header small{display:block;font-size:12.5px;color:var(--muted);font-weight:600}
+
+main{flex:1;overflow-y:auto;padding:18px;min-height:0}
+.panel{display:none}
+.panel.on{display:block}
+
+.empty{margin-top:40px;border:2px dashed var(--line);border-radius:18px;padding:40px 24px;
+  text-align:center;color:var(--muted)}
+.empty .ic{font-size:40px;margin-bottom:12px}
+.empty .t{font-size:17px;font-weight:800;color:var(--ink);margin-bottom:6px}
+.empty .d{font-size:14px;font-weight:600;line-height:1.5}
+
+nav{flex:none;display:grid;grid-template-columns:repeat(4,1fr);background:#fff;
+  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{appearance:none;border:0;background:none;display:flex;flex-direction:column;
+  align-items:center;gap:4px;padding:10px 4px 12px;font-family:inherit;color:var(--muted);
+  font-size:12.5px;font-weight:700;cursor:pointer;min-height:56px}
+nav button .ic{font-size:22px;line-height:1}
+nav button.on{color:var(--accent)}
+nav button.on .ic{transform:translateY(-1px)}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="lg">R</div>
+    <div><b>RELAY FIELD</b><small>현장 작업 지시 · 점검/수리</small></div>
+  </header>
+
+  <main>
+    <section class="panel" data-panel="todo">
+      <div class="empty">
+        <div class="ic">📋</div>
+        <div class="t">지시함</div>
+        <div class="d">받은 지시가 여기 표시됩니다.<br>(기능 준비 중)</div>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="work">
+      <div class="empty">
+        <div class="ic">🔧</div>
+        <div class="t">작업</div>
+        <div class="d">증상 입력 · 원인 확인 · 완료 처리가 여기서 이뤄집니다.<br>(기능 준비 중)</div>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="history">
+      <div class="empty">
+        <div class="ic">🗂️</div>
+        <div class="t">이력</div>
+        <div class="d">내가 처리한 점검·수리 이력이 여기 표시됩니다.<br>(기능 준비 중)</div>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="me">
+      <div class="empty">
+        <div class="ic">👤</div>
+        <div class="t">내 정보</div>
+        <div class="d">담당 설비, 설정 등이 여기 표시됩니다.<br>(기능 준비 중)</div>
+      </div>
+    </section>
+  </main>
+
+  <nav>
+    <button class="on" data-tab="todo"><span class="ic">📋</span>지시함</button>
+    <button data-tab="work"><span class="ic">🔧</span>작업</button>
+    <button data-tab="history"><span class="ic">🗂️</span>이력</button>
+    <button data-tab="me"><span class="ic">👤</span>내 정보</button>
+  </nav>
+</div>
+
+<script>
+const tabs = document.querySelectorAll('nav button');
+const panels = document.querySelectorAll('.panel');
+tabs.forEach(btn => btn.addEventListener('click', () => {
+  tabs.forEach(b => b.classList.remove('on'));
+  panels.forEach(p => p.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelector(`.panel[data-panel="${btn.dataset.tab}"]`).classList.add('on');
+}));
+panels[0].classList.add('on');
+</script>
+</body>
+</html>

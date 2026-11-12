@@ -1,0 +1,921 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>RELAY Field</title>
+
+<!-- PWA: 홈 화면에 추가하면 앱처럼 전체화면으로 열림 -->
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#2F5D8A" />
+<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="RELAY Field" />
+<style>
+:root{
+  --bg:#F7F8FA; --card:#fff; --ink:#1A1D21; --muted:#6B7280; --line:#E4E6EA;
+  --accent:#2F5D8A; --accent-soft:#EEF2F6; --chip:#F1F2F4;
+  --ok:#2E9E6A; --warn:#C8780A; --bad:#D03C3C; --standby:#8A8F98;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);
+  font-family:'Pretendard','Malgun Gothic',sans-serif;-webkit-font-smoothing:antialiased}
+#app{display:flex;flex-direction:column;min-height:100vh}
+
+.ico{width:16px;height:16px;flex:none}
+.ico svg{display:block;width:100%;height:100%}
+
+header{flex:none;display:flex;align-items:center;gap:32px;padding:0 28px;height:64px;
+  background:#fff;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;flex:none}
+.brand .lg{width:28px;height:28px;border-radius:7px;background:var(--accent);color:#fff;
+  display:grid;place-items:center;font-weight:800;font-size:14px}
+.brand b{font-size:15px;font-weight:800;letter-spacing:.3px}
+.brand small{display:block;font-size:12px;color:var(--muted);font-weight:500}
+
+.tabs{display:flex;gap:2px}
+.tabs button{appearance:none;border:0;background:none;font-family:inherit;cursor:pointer;
+  font-size:14px;font-weight:600;color:var(--muted);padding:9px 14px;border-radius:6px;
+  display:flex;align-items:center;gap:7px}
+.tabs button:hover{color:var(--ink);background:var(--chip)}
+.tabs button.on{background:var(--accent-soft);color:var(--accent)}
+
+main{flex:1;padding:28px 32px;max-width:1120px;width:100%;margin:0 auto}
+.panel{display:none}
+.panel.on{display:block}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:44px 32px;text-align:center;color:var(--muted)}
+.card .ic{width:30px;height:30px;margin:0 auto 14px;color:var(--muted)}
+.card .ic svg{width:100%;height:100%}
+.card .t{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:5px}
+.card .d{font-size:13.5px;font-weight:500;line-height:1.6}
+
+.inst-list{display:flex;flex-direction:column;gap:8px}
+.inst{background:var(--card);border-radius:8px;border:1px solid var(--line);
+  border-left:3px solid var(--c);
+  padding:15px 18px;display:flex;align-items:center;gap:18px;cursor:pointer;transition:border-color .15s,background .15s}
+.inst:hover{border-color:var(--accent);background:var(--accent-soft)}
+.inst .pr{flex:none;font-size:11px;font-weight:700;color:#fff;background:var(--c);
+  padding:3px 8px;border-radius:4px;white-space:nowrap;letter-spacing:.2px}
+.inst .main{flex:1;min-width:0}
+.inst .eq{font-size:14.5px;font-weight:700}
+.inst .eq span{font-weight:500;color:var(--muted);font-size:13px;margin-left:8px}
+.inst .memo{font-size:13px;color:var(--muted);font-weight:500;margin-top:3px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.inst .dl{flex:none;text-align:right;font-size:12px;color:var(--muted);font-weight:500}
+.inst .dl b{display:block;font-size:13.5px;color:var(--ink);font-weight:700}
+.inst.done{opacity:.5}
+.inst.done .pr{background:var(--standby)}
+
+#scrim{position:fixed;inset:0;background:rgba(20,22,25,.28);opacity:0;pointer-events:none;
+  transition:.2s;z-index:10}
+#drawer{position:fixed;top:0;right:0;bottom:0;width:420px;background:#fff;
+  border-left:1px solid var(--line);box-shadow:-16px 0 40px rgba(20,22,25,.08);
+  transform:translateX(100%);transition:transform .25s;padding:24px 26px;overflow:auto;z-index:11}
+.dopen #scrim{opacity:1;pointer-events:auto}
+.dopen #drawer{transform:none}
+.dh{display:flex;align-items:center;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.dh .pr{font-size:11px;font-weight:700;color:#fff;background:var(--c);padding:3px 8px;border-radius:4px}
+.dh b{font-size:16px;font-weight:700}
+.dh button{margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:6px;
+  width:30px;height:30px;font-size:14px;cursor:pointer;color:var(--muted)}
+.dh button:hover{background:var(--chip)}
+.dk{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin:16px 0;
+  border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--line)}
+.dk div{background:#fff;padding:11px 14px}
+.dk span{display:block;font-size:11.5px;color:var(--muted);font-weight:600}
+.dk b{font-size:14px;font-weight:700}
+.dmemo{background:var(--chip);border-radius:8px;padding:14px 16px;font-size:13.5px;
+  font-weight:500;line-height:1.6;color:var(--ink)}
+.dmemo b{display:block;font-size:11.5px;color:var(--muted);font-weight:700;margin-bottom:6px;
+  text-transform:uppercase;letter-spacing:.3px}
+.dbtn{margin-top:20px;width:100%;border:0;border-radius:8px;padding:12px;
+  font-weight:700;font-size:14.5px;background:var(--accent);color:#fff;cursor:pointer}
+.dbtn:hover{opacity:.92}
+
+.work-head{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.work-head .eqbox{width:44px;height:44px;border-radius:8px;background:var(--chip);
+  color:var(--ink);display:grid;place-items:center;font-weight:700;font-size:13px;flex:none;
+  border:1px solid var(--line)}
+.work-head b{font-size:16px;font-weight:700;display:block}
+.work-head span{font-size:13px;color:var(--muted);font-weight:500}
+
+.sec{background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:20px 22px;margin-bottom:14px}
+.sec h4{margin:0 0 12px;font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:8px}
+.sec h4 small{font-size:11.5px;color:var(--muted);font-weight:500}
+
+.ai-box{background:var(--chip);border-radius:8px;padding:14px 16px;display:flex;
+  align-items:baseline;gap:10px;margin-bottom:0}
+.ai-box b{font-size:20px;font-weight:700;color:var(--ink)}
+.ai-box span{font-size:12.5px;color:var(--muted);font-weight:500}
+
+.hist{display:flex;flex-direction:column;gap:1px;border:1px solid var(--line);
+  border-radius:8px;overflow:hidden;background:var(--line)}
+.hist div{display:grid;grid-template-columns:70px 64px 1fr 50px;gap:10px;align-items:center;
+  padding:9px 12px;background:#fff;font-size:13px}
+.hist time{font-weight:600;color:var(--muted)}
+.hist .ty{font-weight:600;color:var(--ink)}
+.hist .hh{text-align:right;color:var(--muted);font-weight:500}
+
+.todo-box{border:1px dashed var(--line);border-radius:8px;padding:18px;text-align:center;
+  color:var(--muted);font-size:13px;font-weight:500}
+.todo-box small{display:block;margin-top:4px;font-weight:500}
+
+.profile{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+.profile .av{width:48px;height:48px;border-radius:50%;background:var(--accent);color:#fff;
+  display:grid;place-items:center;font-size:17px;font-weight:700;flex:none}
+.profile b{font-size:16px;font-weight:700;display:block}
+.profile span{font-size:13px;color:var(--muted);font-weight:500}
+.taglist{display:flex;gap:6px;flex-wrap:wrap}
+.taglist span{background:var(--chip);border:1px solid var(--line);border-radius:6px;
+  padding:5px 10px;font-size:12.5px;font-weight:600}
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sec-head h4{margin:0}
+.editbtn{border:1px solid var(--line);background:#fff;border-radius:6px;padding:5px 11px;font-weight:600;
+  font-size:12.5px;color:var(--ink);cursor:pointer;font-family:inherit}
+.editbtn:hover{background:var(--chip)}
+.pick{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.pick button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:7px 13px;
+  font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit}
+.pick button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.savebtn{border:0;background:var(--accent);color:#fff;border-radius:6px;padding:9px 16px;
+  font-weight:700;font-size:13px;cursor:pointer;font-family:inherit}
+.formrow{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.formrow label{flex:none;width:80px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.formrow input{flex:1;border:1px solid var(--line);border-radius:6px;padding:8px 11px;
+  font-size:13.5px;font-family:inherit}
+.formrow input:focus{outline:none;border-color:var(--accent)}
+.formrow input.err{border-color:var(--bad)}
+.formerr{color:var(--bad);font-size:12.5px;font-weight:600;margin:-2px 0 10px;min-height:1px}
+.dbtn:disabled{background:var(--standby);cursor:not-allowed;opacity:.65}
+.chosen{display:flex;flex-wrap:wrap;gap:6px}
+.chosen .ctag{background:var(--chip);color:var(--ink);border:1px solid var(--line);border-radius:6px;
+  padding:5px 7px 5px 11px;font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:7px}
+.chosen .ctag button{border:0;background:none;color:var(--muted);font-size:13px;
+  cursor:pointer;line-height:1;padding:0;font-weight:700}
+.addbtn{border:1px dashed var(--line);background:none;border-radius:6px;padding:6px 12px;
+  font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit}
+
+#modalScrim{position:fixed;inset:0;background:rgba(20,22,25,.4);display:grid;place-items:center;
+  opacity:0;pointer-events:none;transition:.2s;z-index:20}
+.mopen #modalScrim{opacity:1;pointer-events:auto}
+.sym-modal{width:520px;max-height:80vh;display:flex;flex-direction:column;background:#fff;
+  border-radius:12px;padding:22px 24px;box-shadow:0 20px 50px rgba(20,22,25,.25);border:1px solid var(--line)}
+.sym-modal h3{margin:0 0 14px;font-size:15.5px;font-weight:700}
+.searchrow{display:flex;gap:8px;margin-bottom:12px}
+.searchrow input{flex:1;border:1px solid var(--line);border-radius:6px;padding:9px 12px;
+  font-size:13.5px;font-family:inherit}
+.searchrow input:focus{outline:none;border-color:var(--accent)}
+.searchrow button{flex:none;width:36px;border:1px solid var(--accent);border-radius:6px;background:var(--accent);
+  color:#fff;font-size:16px;font-weight:700;cursor:pointer}
+.results{flex:1;overflow:auto;display:flex;flex-direction:column;gap:5px;margin-bottom:14px;min-height:60px}
+.results button{text-align:left;border:1px solid var(--line);background:#fff;border-radius:6px;
+  padding:9px 12px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--ink)}
+.results button:hover{border-color:var(--accent);background:var(--accent-soft)}
+.results button.picked{background:var(--accent);border-color:var(--accent);color:#fff}
+.results .none{color:var(--muted);font-size:13px;font-weight:500;padding:8px 2px}
+.sel-title{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:7px}
+.modal-foot{display:flex;gap:8px;margin-top:16px}
+.modal-foot button{flex:1;border:1px solid var(--line);border-radius:6px;padding:10px;font-weight:600;
+  font-size:13.5px;cursor:pointer;font-family:inherit}
+.modal-foot .cancel{background:#fff;color:var(--ink)}
+.modal-foot .ok{background:var(--accent);border-color:var(--accent);color:#fff}
+
+.bottomtabs{display:none}
+
+/* ── 모바일(폰·작은 태블릿) 반응형 ── */
+@media (max-width: 760px){
+  header{gap:0;padding:0 16px;height:52px}
+  header .tabs{display:none}
+  .brand b{font-size:14px}
+  .brand small{display:none}
+
+  main{padding:14px 14px 90px;max-width:100%}
+
+  .bottomtabs{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;left:0;right:0;bottom:0;
+    background:#fff;border-top:1px solid var(--line);z-index:15;
+    padding-bottom:env(safe-area-inset-bottom)}
+  .bottomtabs button{appearance:none;border:0;background:none;font-family:inherit;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 2px 10px;
+    font-size:11px;font-weight:600;color:var(--muted);min-height:54px}
+  .bottomtabs button .ico{width:20px;height:20px}
+  .bottomtabs button.on{color:var(--accent)}
+
+  .inst{padding:13px 14px;gap:12px}
+  .inst .eq{font-size:13.5px}
+  .inst .dl{display:none}
+
+  #drawer{width:100%;padding:18px 18px calc(18px + env(safe-area-inset-bottom))}
+
+  .work-head{flex-wrap:wrap}
+  .dk{grid-template-columns:1fr 1fr}
+  .hist div{grid-template-columns:56px 1fr 44px;font-size:12.5px}
+  .hist .ty{display:none}
+
+  .formrow{flex-direction:column;align-items:flex-start;gap:6px}
+  .formrow label{width:auto}
+  .formrow input{width:100%;font-size:16px}
+  .searchrow input{font-size:16px}
+
+  .sym-modal{width:92vw;max-height:78vh;padding:18px 16px}
+
+  .sec{padding:16px 16px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand"><div class="lg">R</div><div><b>RELAY FIELD</b><small>현장 작업 지시 · 점검/수리</small></div></div>
+    <nav class="tabs" id="tabNav"></nav>
+  </header>
+
+  <main>
+    <section class="panel" data-panel="todo">
+      <div class="inst-list" id="instList"></div>
+    </section>
+
+    <section class="panel" data-panel="work" id="workPanel"></section>
+
+    <section class="panel" data-panel="history" id="historyPanel"></section>
+
+    <section class="panel" data-panel="me" id="mePanel"></section>
+  </main>
+
+  <nav class="bottomtabs" id="bottomNav"></nav>
+
+  <div id="scrim"></div>
+  <aside id="drawer"></aside>
+  <div id="modalScrim"><div class="sym-modal" id="symModal"></div></div>
+</div>
+
+<script>
+// 선 아이콘 (이모지 대체) — 단순한 stroke 기반 아이콘 세트
+const ICONS = {
+  inbox: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v10l-3 6H7l-3-6z"/><path d="M4 14h5l1 2h4l1-2h5"/></svg>`,
+  wrench: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z"/></svg>`,
+  clock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></svg>`,
+  user: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7"/></svg>`,
+};
+function ic(name) { return `<span class="ico">${ICONS[name]}</span>`; }
+
+const TAB_DEF = [
+  ['todo', 'inbox', '지시함'],
+  ['work', 'wrench', '작업'],
+  ['history', 'clock', '이력'],
+  ['me', 'user', '내 정보'],
+];
+const tabMarkup = TAB_DEF.map(([id, icon, label], i) =>
+  `<button class="${i === 0 ? 'on' : ''}" data-tab="${id}">${ic(icon)}${label}</button>`).join('');
+document.getElementById('tabNav').innerHTML = tabMarkup;
+document.getElementById('bottomNav').innerHTML = tabMarkup;
+
+const tabs = document.querySelectorAll('.tabs button, .bottomtabs button');
+const panels = document.querySelectorAll('.panel');
+function goTab(name) {
+  tabs.forEach(b => b.classList.toggle('on', b.dataset.tab === name));
+  panels.forEach(p => p.classList.toggle('on', p.dataset.panel === name));
+}
+tabs.forEach(btn => btn.addEventListener('click', () => goTab(btn.dataset.tab)));
+goTab('todo');
+
+// RELAY 기존 데이터(01_model.js 설비 구조, 03_sim.js 시나리오 문구)에서 그대로 파생시킨 샘플 지시
+const PR = { urgent: ['긴급', '#D03C3C'], high: ['우선', '#C8780A'], normal: ['보통', '#8A8F98'] };
+
+const INSTRUCTIONS = [
+  { id: 1, unit: 'U400', unitName: '분리·증류', eq: 'P442-1', role: '환류 펌프', type: '점검',
+    priority: 'high', deadline: '14:00', status: 'open',
+    memo: '진동 증가가 보고되어 Main(P442-1)이 Stand-by(P442-2)로 자동 전환된 상태입니다. 현장에서 P442-1을 점검하고 원인을 확인해 주세요.' },
+  { id: 2, unit: 'U600', unitName: '용제 회수', eq: 'P631-2', role: '순환 펌프', type: '수리',
+    priority: 'urgent', deadline: '17:00', status: 'open',
+    memo: 'P631-2 고장으로 순환이 정지되어 생산이 40%로 떨어졌습니다. 최우선으로 수리 바랍니다.' },
+  { id: 3, unit: 'U500', unitName: '정제', eq: 'P542-1', role: '원료 펌프', type: '계획정비',
+    priority: 'normal', deadline: '11/7', status: 'open',
+    memo: 'AI 예방정비 일정에 따른 계획정비입니다. 정비 중 Stand-by(P542-2)의 AI 고장위험이 높게 나와 판단이 필요한 건으로 함께 표시되어 있습니다.' },
+  { id: 4, unit: 'U100', unitName: '원료 전처리', eq: 'P112-1', role: '원료 펌프', type: '점검',
+    priority: 'normal', deadline: '11/6', status: 'done',
+    memo: '정기 순회점검입니다. 이상 없음으로 완료 처리되었습니다.' },
+];
+
+// RELAY(04_drawer.js)의 AI 수리시간 추정 참고표를 그대로 재사용 — 역할명으로 조회
+const REPAIR_HIST = {
+  '원료 펌프': { n: 31, med: 5,   lo: 3, hi: 8 },
+  '순환 펌프': { n: 27, med: 6,   lo: 4, hi: 9 },
+  '환류 펌프': { n: 23, med: 4.5, lo: 3, hi: 7 },
+  '열교환기':  { n: 12, med: 9,   lo: 6, hi: 14 },
+  '이송 펌프': { n: 35, med: 3.5, lo: 2, hi: 5 },
+};
+
+// 증상 → 원인 후보 (분류는 실제 설비 신뢰성 자료 기준, 확률·건수는 데모용 가상치)
+// 펌프류(원료·순환·환류·이송 펌프) vs 열교환기로 구분
+function roleCategory(role) { return role.includes('열교환기') ? 'heatex' : 'pump'; }
+const CAUSE_MAP = {
+  pump: {
+    '진동 증가': [
+      { cause: '캐비테이션(흡입압력 부족)', pct: 42, n: 12, of: 5 },
+      { cause: '베어링 마모', pct: 33, n: 12, of: 4 },
+      { cause: '축 정렬 불량', pct: 25, n: 12, of: 3 },
+    ],
+    '소음 발생': [
+      { cause: '캐비테이션', pct: 48, n: 10, of: 5 },
+      { cause: '윤활유 부족·베어링 손상', pct: 30, n: 10, of: 3 },
+    ],
+    '온도 상승': [
+      { cause: '저유량·공회전', pct: 40, n: 10, of: 4 },
+      { cause: '베어링 손상', pct: 35, n: 10, of: 3 },
+      { cause: '냉각 불량', pct: 25, n: 10, of: 2 },
+    ],
+    '누유': [
+      { cause: '메커니컬 씰 손상', pct: 55, n: 11, of: 6 },
+      { cause: '건식운전으로 씰 손상', pct: 27, n: 11, of: 3 },
+    ],
+    '누수': [
+      { cause: '메커니컬 씰 손상', pct: 50, n: 8, of: 4 },
+      { cause: '설치 불량·개스킷 손상', pct: 25, n: 8, of: 2 },
+    ],
+    '압력 저하': [
+      { cause: '캐비테이션', pct: 45, n: 9, of: 4 },
+      { cause: '임펠러 마모·손상', pct: 33, n: 9, of: 3 },
+    ],
+    '압력 상승': [
+      { cause: '토출측 밸브 오작동·막힘', pct: 46, n: 8, of: 4 },
+      { cause: '배관 막힘(스케일·이물질)', pct: 29, n: 8, of: 2 },
+    ],
+    '이상 냄새': [
+      { cause: '모터 권선 과열', pct: 44, n: 9, of: 4 },
+      { cause: '윤활유 열화·탄화', pct: 33, n: 9, of: 3 },
+    ],
+    '변색': [
+      { cause: '과열로 인한 표면 변색', pct: 50, n: 6, of: 3 },
+      { cause: '배관·케이싱 부식', pct: 33, n: 6, of: 2 },
+    ],
+    '작동 불량': [
+      { cause: '커플링 손상', pct: 38, n: 13, of: 5 },
+      { cause: '임펠러 이물질 걸림', pct: 31, n: 13, of: 4 },
+      { cause: '모터 결함', pct: 23, n: 13, of: 3 },
+    ],
+    '전원 이상': [
+      { cause: '모터 과부하 트립', pct: 47, n: 15, of: 7 },
+      { cause: '배선·접점 불량', pct: 33, n: 15, of: 5 },
+    ],
+    '윤활유 부족': [
+      { cause: '윤활유 보충주기 초과', pct: 55, n: 11, of: 6 },
+      { cause: '윤활계통 누설', pct: 27, n: 11, of: 3 },
+    ],
+  },
+  heatex: {
+    '온도 상승': [
+      { cause: '스케일·파울링', pct: 58, n: 9, of: 5 },
+      { cause: '냉각수 처리 불량', pct: 22, n: 9, of: 2 },
+    ],
+    '압력 상승': [
+      { cause: '스케일·파울링으로 유동저항 증가', pct: 50, n: 8, of: 4 },
+    ],
+    '압력 저하': [
+      { cause: '튜브 막힘·스케일', pct: 44, n: 9, of: 4 },
+    ],
+    '누유': [
+      { cause: '튜브 부식·피팅', pct: 47, n: 8, of: 4 },
+      { cause: '개스킷 손상', pct: 28, n: 8, of: 2 },
+    ],
+    '누수': [
+      { cause: '튜브 부식·피팅', pct: 47, n: 8, of: 4 },
+      { cause: '개스킷 손상', pct: 28, n: 8, of: 2 },
+    ],
+    '진동 증가': [
+      { cause: '유동유발진동(튜브 다발)', pct: 40, n: 7, of: 3 },
+    ],
+    '소음 발생': [
+      { cause: '유동유발진동(튜브 다발)', pct: 45, n: 7, of: 3 },
+      { cause: '과도한 유량·서지', pct: 28, n: 7, of: 2 },
+    ],
+    '이상 냄새': [
+      { cause: '내부 유체 혼합(튜브 누설)', pct: 48, n: 6, of: 3 },
+      { cause: '과열로 인한 오일 탄화', pct: 33, n: 6, of: 2 },
+    ],
+    '변색': [
+      { cause: '국부 과열로 인한 표면 변색', pct: 44, n: 7, of: 3 },
+      { cause: '튜브·쉘 부식', pct: 29, n: 7, of: 2 },
+    ],
+    '작동 불량': [
+      { cause: '유량조절밸브 고착', pct: 40, n: 8, of: 3 },
+      { cause: '온도·압력 센서 이상', pct: 30, n: 8, of: 2 },
+    ],
+    '전원 이상': [
+      { cause: '계측·제어 전원 이상', pct: 50, n: 4, of: 2 },
+    ],
+    '윤활유 부족': [
+      { cause: '냉각팬 모터 베어링 윤활 부족', pct: 42, n: 5, of: 2 },
+    ],
+  },
+};
+// 선택된 증상들을 합쳐 Top3 원인 후보 산출 (같은 원인은 더 높은 쪽 확률로 병합)
+function getCauseCandidates(role, symptoms) {
+  const table = CAUSE_MAP[roleCategory(role)] || {};
+  const merged = {};
+  symptoms.forEach(s => (table[s] || []).forEach(c => {
+    if (!merged[c.cause] || merged[c.cause].pct < c.pct) merged[c.cause] = c;
+  }));
+  return Object.values(merged).sort((a, b) => b.pct - a.pct).slice(0, 3);
+}
+
+// 설비별 과거 점검·수리 이력 (데모용, Phase3 증상 분류 확정 전까지는 자연어 기록으로)
+const EQ_HISTORY = {
+  'P442-1': [
+    { date: '09/02', type: '점검', note: '이상 없음, 정기 순회점검', hours: 1 },
+    { date: '07/18', type: '수리', note: '베어링 마모로 교체', hours: 5 },
+    { date: '05/30', type: '점검', note: '미세 진동 확인, 경과 관찰', hours: 1.5 },
+  ],
+  'P631-2': [
+    { date: '08/11', type: '수리', note: '임펠러 손상으로 교체', hours: 6.5 },
+    { date: '04/02', type: '점검', note: '이상 없음', hours: 1 },
+  ],
+  'P542-1': [
+    { date: '06/14', type: '계획정비', note: '정기 오버홀', hours: 6 },
+    { date: '02/20', type: '수리', note: '씰 누유로 교체', hours: 4 },
+  ],
+  'P112-1': [
+    { date: '10/06', type: '점검', note: '이상 없음, 정기 순회점검', hours: 1 },
+  ],
+};
+
+let currentJobId = null;
+
+// ── 서버 연동(있으면 사용, 없으면 그냥 로컬로만 동작) ──
+// 서버를 통해(/field/) 열렸을 때는 같은 주소(상대경로)로 통하고,
+// 이 파일을 그냥 더블클릭(file://)해서 열었을 때는 "내 정보" 탭에 입력해둔 서버 주소(절대경로)로 통신한다.
+// (서버 쪽 CORS를 열어놔서 file://에서 보내는 요청도 받아준다.)
+let serverBase = localStorage.getItem('relayServerBase') || '';
+function apiUrl(p) { return (location.protocol === 'file:' ? serverBase : '') + p; }
+function jobFromServer(j) {
+  return { id: j.id, unit: j.uid, unitName: j.unitName, eq: j.eq, role: j.role, type: j.type,
+    priority: j.priority, deadline: j.deadline, status: j.status, memo: j.memo };
+}
+async function syncFromServer() {
+  if (document.body.classList.contains('mopen')) return; // 증상/원인 모달 작성 중이면 건드리지 않음
+  if (location.protocol === 'file:' && !serverBase) return; // 서버 주소 입력 전이면 시도하지 않음
+  try {
+    const res = await fetch(apiUrl('/api/jobs'));
+    if (!res.ok) return;
+    const jobs = await res.json();
+    if (!Array.isArray(jobs) || !jobs.length) return;
+    INSTRUCTIONS.length = 0;
+    jobs.forEach(j => {
+      INSTRUCTIONS.push(jobFromServer(j));
+      if (j.symptoms && j.symptoms.length) jobSymptoms[j.id] = j.symptoms;
+      if (j.cause) jobCause[j.id] = j.cause;
+      if (j.details) jobDetails[j.id] = j.details;
+    });
+    renderInstructions(); renderWork(); renderHistory();
+  } catch (e) { /* 서버 없음 — 로컬 데이터 그대로 */ }
+}
+function pushJob(id, patch) {
+  fetch(apiUrl('/api/jobs/' + id), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) }).catch(() => {});
+}
+function saveServerBase(v) {
+  v = v.trim().replace(/\/$/, '');
+  serverBase = v;
+  try { localStorage.setItem('relayServerBase', v); } catch (e) {}
+  syncFromServer();
+}
+
+// ── 데이터 저장(localStorage) — 새로고침해도 증상/원인/조치/완료상태/담당공정 유지 ──
+const STORE_KEY = 'relayFieldState_v1';
+function saveState() {
+  try {
+    const instStatus = {};
+    INSTRUCTIONS.forEach(i => { instStatus[i.id] = i.status; });
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      instStatus, jobSymptoms, jobCause, jobDetails, myUnits, currentJobId,
+    }));
+  } catch (e) {}
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    if (s.instStatus) INSTRUCTIONS.forEach(i => { if (s.instStatus[i.id]) i.status = s.instStatus[i.id]; });
+    if (s.jobSymptoms) Object.assign(jobSymptoms, s.jobSymptoms);
+    if (s.jobCause) Object.assign(jobCause, s.jobCause);
+    if (s.jobDetails) Object.assign(jobDetails, s.jobDetails);
+    if (Array.isArray(s.myUnits)) myUnits = s.myUnits;
+    if (s.currentJobId != null) currentJobId = s.currentJobId;
+  } catch (e) {}
+}
+
+const instList = document.getElementById('instList');
+function renderInstructions() {
+  instList.innerHTML = INSTRUCTIONS.map(i => {
+    const [prLabel, prColor] = PR[i.priority];
+    return `<div class="inst ${i.status === 'done' ? 'done' : ''}" style="--c:${prColor}" data-id="${i.id}">
+      <span class="pr">${i.status === 'done' ? '완료' : prLabel}</span>
+      <div class="main">
+        <div class="eq">${i.eq} <span>${i.unitName} · ${i.role} · ${i.type}</span></div>
+        <div class="memo">${i.memo}</div>
+      </div>
+      <div class="dl">마감<b>${i.deadline}</b></div>
+    </div>`;
+  }).join('');
+}
+renderInstructions();
+
+const scrim = document.getElementById('scrim');
+const drawer = document.getElementById('drawer');
+function openDrawer(id) {
+  const i = INSTRUCTIONS.find(x => x.id === id);
+  const [prLabel, prColor] = PR[i.priority];
+  drawer.style.setProperty('--c', prColor);
+  drawer.innerHTML = `
+    <div class="dh" style="border-color:${prColor}">
+      <span class="pr" style="background:${prColor}">${i.status === 'done' ? '완료' : prLabel}</span>
+      <b>${i.eq} · ${i.role}</b>
+      <button id="dx">✕</button>
+    </div>
+    <div class="dk">
+      <div><span>소속 공정</span><b>${i.unit} · ${i.unitName}</b></div>
+      <div><span>작업 유형</span><b>${i.type}</b></div>
+      <div><span>마감</span><b>${i.deadline}</b></div>
+      <div><span>상태</span><b>${i.status === 'done' ? '완료' : '대기'}</b></div>
+    </div>
+    <div class="dmemo"><b>팀장 메모</b>${i.memo}</div>
+    ${i.status === 'done' ? '' : '<button class="dbtn" id="goWork">이 작업 시작하기</button>'}
+  `;
+  document.body.classList.add('dopen');
+  document.getElementById('dx').addEventListener('click', closeDrawer);
+  const goBtn = document.getElementById('goWork');
+  if (goBtn) goBtn.addEventListener('click', () => {
+    currentJobId = i.id;
+    saveState();
+    closeDrawer();
+    goTab('work');
+    renderWork();
+  });
+}
+function closeDrawer() { document.body.classList.remove('dopen'); }
+scrim.addEventListener('click', closeDrawer);
+instList.addEventListener('click', e => {
+  const card = e.target.closest('.inst');
+  if (card) openDrawer(+card.dataset.id);
+});
+
+// ── Phase 2: 작업 전 참고 + Phase 5: 완료 처리(뼈대) ──
+const workPanel = document.getElementById('workPanel');
+function renderWork() {
+  const i = INSTRUCTIONS.find(x => x.id === currentJobId);
+  if (!i) {
+    workPanel.innerHTML = `<div class="card"><div class="ic">${ICONS.wrench}</div><div class="t">작업</div>
+      <div class="d">지시함에서 "이 작업 시작하기"를 누르면 여기에 표시됩니다.</div></div>`;
+    return;
+  }
+  const hist = EQ_HISTORY[i.eq] || [];
+  const ai = REPAIR_HIST[i.role];
+  workPanel.innerHTML = `
+    <div class="work-head">
+      <div class="eqbox">${i.eq}</div>
+      <div><b>${i.unitName} · ${i.role}</b><span>${i.type} · 마감 ${i.deadline}</span></div>
+    </div>
+
+    <div class="sec">
+      <h4>AI 수리시간 추정 <small>과거 기록 기반</small></h4>
+      <div class="ai-box"><b>약 ${ai.med}시간</b><span>과거 ${i.role} 수리·정비 ${ai.n}건 · ${ai.lo}~${ai.hi}시간</span></div>
+    </div>
+
+    <div class="sec">
+      <h4>이 설비(${i.eq})의 과거 이력</h4>
+      <div class="hist">
+        ${hist.length ? hist.map(h => `<div><time>${h.date}</time><span class="ty">${h.type}</span><span>${h.note}</span><span class="hh">${h.hours}h</span></div>`).join('')
+          : '<div class="todo-box">과거 이력 없음</div>'}
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><h4>증상 입력</h4><button class="editbtn" id="openSym">${(jobSymptoms[i.id] || []).length ? '수정' : '증상 입력하기'}</button></div>
+      ${(jobSymptoms[i.id] || []).length
+        ? `<div class="chosen">${jobSymptoms[i.id].map(s => `<span class="ctag">${s}</span>`).join('')}</div>`
+        : `<div class="todo-box">아직 입력된 증상이 없습니다.</div>`}
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><h4>원인 확정</h4>
+        ${(jobSymptoms[i.id] || []).length ? `<button class="editbtn" id="openCause">${jobCause[i.id] ? '수정' : '원인 확정하기'}</button>` : ''}
+      </div>
+      ${!(jobSymptoms[i.id] || []).length ? `<div class="todo-box">먼저 증상을 입력하면 원인 후보를 보여드립니다.</div>`
+        : jobCause[i.id] ? `<div class="chosen"><span class="ctag">${jobCause[i.id].cause}${jobCause[i.id].pct ? ` (${jobCause[i.id].pct}%)` : ' (직접입력)'}</span></div>`
+        : `<div class="todo-box">아직 원인이 확정되지 않았습니다.</div>`}
+    </div>
+
+    ${jobCause[i.id] ? `
+    <div class="sec">
+      <h4>조치 내용</h4>
+      <div class="formrow"><label>조치 내용 *</label><input id="actNote" type="text" placeholder="예: 메커니컬 씰 교체" value="${(jobDetails[i.id] || {}).action || ''}"></div>
+      <div class="formrow"><label>소요시간(h) *</label><input id="actHours" type="number" step="0.5" min="0" placeholder="예: 4.5" value="${(jobDetails[i.id] || {}).hours || ''}"></div>
+      <div class="formrow"><label>사용 부품</label><input id="actParts" type="text" placeholder="예: 메커니컬 씰 1EA (선택)" value="${(jobDetails[i.id] || {}).parts || ''}"></div>
+      <div class="formerr" id="actErr"></div>
+    </div>` : ''}
+
+    <button class="dbtn" id="finishJob" ${jobCause[i.id] ? '' : 'disabled title="먼저 원인을 확정해주세요"'}>작업 완료 처리</button>
+  `;
+  document.getElementById('finishJob').addEventListener('click', () => {
+    if (!jobCause[i.id]) return;
+    const noteEl = document.getElementById('actNote');
+    const hoursEl = document.getElementById('actHours');
+    const partsEl = document.getElementById('actParts');
+    const action = noteEl.value.trim();
+    const hoursRaw = hoursEl.value.trim();
+    const hours = parseFloat(hoursRaw);
+    const errEl = document.getElementById('actErr');
+    noteEl.classList.toggle('err', !action);
+    hoursEl.classList.toggle('err', !hoursRaw || isNaN(hours) || hours <= 0);
+    if (!action) { errEl.textContent = '조치 내용을 입력해주세요.'; return; }
+    if (!hoursRaw || isNaN(hours) || hours <= 0) { errEl.textContent = '소요시간을 올바르게 입력해주세요.'; return; }
+    errEl.textContent = '';
+    jobDetails[i.id] = { action, hours: hoursRaw, parts: partsEl.value.trim() };
+    i.status = 'done';
+    currentJobId = null;
+    saveState();
+    pushJob(i.id, { status: 'done', details: jobDetails[i.id] });
+    renderInstructions();
+    renderHistory();
+    goTab('history');
+  });
+  document.getElementById('openSym').addEventListener('click', () => openSymptomModal(i.id));
+  const causeBtn = document.getElementById('openCause');
+  if (causeBtn) causeBtn.addEventListener('click', () => openCauseModal(i.id));
+}
+
+// ── Phase 3: 증상 입력 (분류목록 검색 + 자유텍스트 추가) ──
+const SYMPTOM_LIST = [
+  '진동 증가', '소음 발생', '온도 상승', '누유', '누수', '압력 저하',
+  '압력 상승', '이상 냄새', '변색', '작동 불량', '전원 이상', '윤활유 부족',
+];
+const jobSymptoms = {};
+let symPicking = null;   // 지금 모달을 연 작업 id
+let symTemp = [];        // 모달 안에서 고르는 중인 임시 선택값
+let symQuery = '';
+let symCustomOpen = false;  // + 버튼으로 연 직접입력창 표시 여부
+let symCustomText = '';
+
+const modalScrim = document.getElementById('modalScrim');
+const symModal = document.getElementById('symModal');
+
+function openSymptomModal(jobId) {
+  symPicking = jobId;
+  symTemp = [...(jobSymptoms[jobId] || [])];
+  symQuery = '';
+  symCustomOpen = false;
+  symCustomText = '';
+  renderSymptomModal();
+  document.body.classList.add('mopen');
+}
+function closeSymptomModal() { document.body.classList.remove('mopen'); }
+
+function addCustomSymptom() {
+  const v = symCustomText.trim();
+  if (v && !symTemp.includes(v)) symTemp.push(v);
+  symCustomText = '';
+  renderSymptomModal();
+}
+
+function renderSymptomModal() {
+  const filtered = SYMPTOM_LIST.filter(s => s.includes(symQuery));
+  symModal.innerHTML = `
+    <h3>증상 선택</h3>
+    <div class="searchrow">
+      <input id="symSearch" type="text" placeholder="증상 검색 (예: 진동)" value="${symQuery}">
+      <button id="symAdd" title="목록에 없으면 직접 추가">+</button>
+    </div>
+    ${symCustomOpen ? `
+    <div class="searchrow">
+      <input id="symCustomInput" type="text" placeholder="새 증상 이름을 입력하세요" value="${symCustomText}">
+      <button id="symCustomOk">추가</button>
+    </div>` : ''}
+    <div class="sel-title">목록에서 선택 (복수 가능) · 없으면 + 버튼으로 직접 추가</div>
+    <div class="results">
+      ${filtered.length ? filtered.map(s => `<button class="${symTemp.includes(s) ? 'picked' : ''}" data-s="${s}">${s}</button>`).join('')
+        : '<div class="none">일치하는 항목이 없습니다. + 버튼으로 직접 추가하세요.</div>'}
+    </div>
+    ${symTemp.length ? `<div class="sel-title">선택된 증상</div><div class="chosen">${symTemp.map(s => `<span class="ctag">${s}<button data-rm="${s}">×</button></span>`).join('')}</div>` : ''}
+    <div class="modal-foot">
+      <button class="cancel" id="symCancel">취소</button>
+      <button class="ok" id="symOk">확인</button>
+    </div>
+  `;
+  const search = document.getElementById('symSearch');
+  search.addEventListener('input', () => { symQuery = search.value; renderSymptomModal(); });
+  document.getElementById('symAdd').addEventListener('click', () => {
+    symCustomOpen = !symCustomOpen;
+    symCustomText = '';
+    renderSymptomModal();
+  });
+
+  const custom = document.getElementById('symCustomInput');
+  if (custom) {
+    custom.focus();
+    custom.setSelectionRange(symCustomText.length, symCustomText.length);
+    custom.addEventListener('input', () => { symCustomText = custom.value; });
+    custom.addEventListener('keydown', e => { if (e.key === 'Enter') addCustomSymptom(); });
+    document.getElementById('symCustomOk').addEventListener('click', addCustomSymptom);
+  } else {
+    search.focus();
+    search.setSelectionRange(symQuery.length, symQuery.length);
+  }
+
+  symModal.querySelectorAll('.results button[data-s]').forEach(b => b.addEventListener('click', () => {
+    const s = b.dataset.s;
+    symTemp = symTemp.includes(s) ? symTemp.filter(x => x !== s) : [...symTemp, s];
+    renderSymptomModal();
+  }));
+  symModal.querySelectorAll('[data-rm]').forEach(b => b.addEventListener('click', () => {
+    symTemp = symTemp.filter(x => x !== b.dataset.rm);
+    renderSymptomModal();
+  }));
+  document.getElementById('symCancel').addEventListener('click', closeSymptomModal);
+  document.getElementById('symOk').addEventListener('click', () => {
+    jobSymptoms[symPicking] = [...symTemp];
+    saveState();
+    pushJob(symPicking, { symptoms: jobSymptoms[symPicking] });
+    closeSymptomModal();
+    renderWork();
+  });
+}
+modalScrim.addEventListener('click', e => { if (e.target === modalScrim) { closeSymptomModal(); closeCauseModal(); } });
+
+// ── Phase 4: 원인 확정 (후보 Top3 클릭 선택 + 직접입력) ──
+const jobCause = {};
+const jobDetails = {};
+let causePicking = null;
+let causeCustomOpen = false;
+let causeCustomText = '';
+
+function openCauseModal(jobId) {
+  causePicking = jobId;
+  causeCustomOpen = false;
+  causeCustomText = '';
+  renderCauseModal();
+  document.body.classList.add('mopen');
+}
+function closeCauseModal() { document.body.classList.remove('mopen'); }
+
+function confirmCause(cause, pct) {
+  jobCause[causePicking] = pct ? { cause, pct } : { cause, pct: null };
+  saveState();
+  pushJob(causePicking, { cause: jobCause[causePicking] });
+  closeCauseModal();
+  renderWork();
+}
+
+function renderCauseModal() {
+  const i = INSTRUCTIONS.find(x => x.id === causePicking);
+  const candidates = getCauseCandidates(i.role, jobSymptoms[i.id] || []);
+  symModal.innerHTML = `
+    <h3>원인 확정 — ${i.eq} · ${i.role}</h3>
+    <div class="sel-title">증상 기반 원인 후보 (과거 기록 기준) · 맞는 게 없으면 + 버튼으로 직접 입력</div>
+    <div class="results">
+      ${candidates.length ? candidates.map(c =>
+        `<button data-cause="${c.cause}" data-pct="${c.pct}">${c.cause} <b style="float:right">${c.pct}% <small style="color:var(--muted);font-weight:600">(과거 ${c.n}건 중 ${c.of}건)</small></b></button>`
+      ).join('') : '<div class="none">참고할 과거 기록이 부족합니다. + 버튼으로 직접 입력해주세요.</div>'}
+    </div>
+    <div class="searchrow">
+      <button id="causeAdd" style="flex:1;border-radius:10px;background:var(--chip);color:var(--ink)">+ 후보에 없는 원인 직접 입력</button>
+    </div>
+    ${causeCustomOpen ? `
+    <div class="searchrow">
+      <input id="causeCustomInput" type="text" placeholder="실제 원인을 입력하세요" value="${causeCustomText}">
+      <button id="causeCustomOk">확정</button>
+    </div>` : ''}
+    <div class="modal-foot">
+      <button class="cancel" id="causeCancel">취소</button>
+    </div>
+  `;
+  symModal.querySelectorAll('.results button[data-cause]').forEach(b => b.addEventListener('click', () => {
+    confirmCause(b.dataset.cause, +b.dataset.pct);
+  }));
+  document.getElementById('causeAdd').addEventListener('click', () => {
+    causeCustomOpen = !causeCustomOpen;
+    causeCustomText = '';
+    renderCauseModal();
+  });
+  const custom = document.getElementById('causeCustomInput');
+  if (custom) {
+    custom.focus();
+    custom.addEventListener('input', () => { causeCustomText = custom.value; });
+    custom.addEventListener('keydown', e => { if (e.key === 'Enter') commitCustomCause(); });
+    document.getElementById('causeCustomOk').addEventListener('click', commitCustomCause);
+  }
+  document.getElementById('causeCancel').addEventListener('click', closeCauseModal);
+}
+function commitCustomCause() {
+  const v = causeCustomText.trim();
+  if (v) confirmCause(v, null);
+}
+
+// ── Phase 6: 이력 / 내 정보 ──
+const historyPanel = document.getElementById('historyPanel');
+function renderHistory() {
+  const done = INSTRUCTIONS.filter(i => i.status === 'done');
+  historyPanel.innerHTML = `<div class="inst-list">${
+    done.length ? done.map(i => {
+      const cause = jobCause[i.id], d = jobDetails[i.id];
+      const summary = cause ? `원인: ${cause.cause}${d && d.action ? ` · 조치: ${d.action}` : ''}${d && d.hours ? ` · ${d.hours}h` : ''}` : i.memo;
+      return `
+      <div class="inst done" style="--c:${PR[i.priority][1]}">
+        <span class="pr">완료</span>
+        <div class="main">
+          <div class="eq">${i.eq} <span>${i.unitName} · ${i.role} · ${i.type}</span></div>
+          <div class="memo">${summary}</div>
+        </div>
+        <div class="dl">마감<b>${i.deadline}</b></div>
+      </div>`;
+    }).join('')
+    : `<div class="card"><div class="ic">${ICONS.clock}</div><div class="t">이력 없음</div><div class="d">완료한 작업이 여기 표시됩니다.</div></div>`
+  }</div>`;
+}
+
+// RELAY(01_model.js)의 공정 8개 전체 — 담당 공정 선택지
+const ALL_UNITS = [
+  { id: 'U100', name: '원료 전처리' }, { id: 'U200', name: '1반응' },
+  { id: 'U300', name: '2반응' },     { id: 'U400', name: '분리·증류' },
+  { id: 'U500', name: '정제' },      { id: 'U600', name: '용제 회수' },
+  { id: 'U700', name: '제품 출하' }, { id: 'U800', name: '유틸리티' },
+];
+let myUnits = [...new Set(INSTRUCTIONS.map(i => i.unit))];
+let editingMe = false;
+
+// file://로 직접 연 경우에만 보이는 서버 주소 설정 — 더블클릭으로 연 파일도 이 주소로 서버와 통신한다
+function serverSettingsHTML() {
+  if (location.protocol !== 'file:') return '';
+  return `
+    <div class="sec">
+      <div class="sec-head"><h4>서버 연결</h4></div>
+      <div class="formrow"><label>서버 주소</label><input id="srvBase" type="text" placeholder="예: http://192.168.0.5:8787" value="${serverBase}"></div>
+      <button class="savebtn" id="srvSave">저장</button>
+      <div class="formerr" style="color:var(--muted)" id="srvStatus">${serverBase ? '설정됨: ' + serverBase : '입력하지 않으면 로컬 샘플 데이터로만 동작합니다.'}</div>
+    </div>`;
+}
+function bindServerSettings() {
+  const btn = document.getElementById('srvSave'); if (!btn) return;
+  btn.addEventListener('click', () => {
+    saveServerBase(document.getElementById('srvBase').value);
+    document.getElementById('srvStatus').textContent = serverBase ? '설정됨: ' + serverBase + ' · 연결 시도 중...' : '입력하지 않으면 로컬 샘플 데이터로만 동작합니다.';
+  });
+}
+
+const mePanel = document.getElementById('mePanel');
+function renderMe() {
+  const label = id => { const u = ALL_UNITS.find(x => x.id === id); return `${u.id} · ${u.name}`; };
+
+  if (!editingMe) {
+    mePanel.innerHTML = `
+      <div class="sec">
+        <div class="profile">
+          <div class="av">정</div>
+          <div><b>정현장</b><span>현장정비팀 · 배관설비정비 2급</span></div>
+        </div>
+        <div class="sec-head"><h4>담당 공정</h4><button class="editbtn" id="meEdit">수정</button></div>
+        <div class="taglist">${myUnits.map(id => `<span>${label(id)}</span>`).join('') || '<span>담당 공정 없음</span>'}</div>
+      </div>
+      ${serverSettingsHTML()}
+    `;
+    document.getElementById('meEdit').addEventListener('click', () => { editingMe = true; renderMe(); });
+    bindServerSettings();
+  } else {
+    mePanel.innerHTML = `
+      <div class="sec">
+        <div class="profile">
+          <div class="av">정</div>
+          <div><b>정현장</b><span>현장정비팀 · 배관설비정비 2급</span></div>
+        </div>
+        <div class="sec-head"><h4>담당 공정 선택</h4></div>
+        <div class="pick">${ALL_UNITS.map(u => `<button data-id="${u.id}" class="${myUnits.includes(u.id) ? 'on' : ''}">${u.id} · ${u.name}</button>`).join('')}</div>
+        <button class="savebtn" id="meSave">저장</button>
+      </div>
+    `;
+    mePanel.querySelectorAll('.pick button').forEach(b => b.addEventListener('click', () => {
+      const id = b.dataset.id;
+      myUnits = myUnits.includes(id) ? myUnits.filter(x => x !== id) : [...myUnits, id];
+      b.classList.toggle('on');
+    }));
+    document.getElementById('meSave').addEventListener('click', () => { editingMe = false; saveState(); renderMe(); });
+  }
+}
+
+loadState();
+renderInstructions();
+renderWork();
+renderHistory();
+renderMe();
+syncFromServer();
+setInterval(syncFromServer, 5000);
+
+// PWA: http(s)로 열렸을 때만 서비스워커 등록 (file://에서는 등록 안 됨 — 정상)
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
